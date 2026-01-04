@@ -4,7 +4,7 @@ import { FaGoogle, FaGithub, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react
 import { useAuth } from '../../providers/AuthProvider';
 
 const Login = () => {
-    const { login } = useAuth();
+    const { signIn, signInWithGoogle, signInWithGithub } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || "/dashboard";
@@ -16,6 +16,7 @@ const Login = () => {
     const [errors, setErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [loginError, setLoginError] = useState("");
 
     const validateForm = () => {
         let newErrors = {};
@@ -31,10 +32,8 @@ const Login = () => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-        // Clear error when user types
-        if (errors[e.target.name]) {
-            setErrors({ ...errors, [e.target.name]: "" });
-        }
+        if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: "" });
+        setLoginError("");
     };
 
     const handleSubmit = async (e) => {
@@ -42,19 +41,27 @@ const Login = () => {
         if (!validateForm()) return;
 
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
-            // Mock successful login
-            const mockUser = {
-                id: 1,
-                name: formData.email.includes("admin") ? "Admin User" : "Demo User",
-                email: formData.email,
-                role: formData.email.includes("admin") ? "admin" : "user"
-            };
-            login(mockUser);
+        setLoginError("");
+
+        try {
+            await signIn(formData.email, formData.password);
             navigate(from, { replace: true });
-        }, 1500);
+        } catch (error) {
+            console.error(error);
+            setLoginError("Invalid email or password. Please try again.");
+            setIsLoading(false);
+        }
+    };
+
+    const handleSocialLogin = async (provider) => {
+        try {
+            if (provider === 'google') await signInWithGoogle();
+            else if (provider === 'github') await signInWithGithub();
+            navigate(from, { replace: true });
+        } catch (error) {
+            console.error(error);
+            setLoginError(`Failed to login with ${provider}.`);
+        }
     };
 
     const handleDemoLogin = (role) => {
@@ -77,7 +84,10 @@ const Login = () => {
                     </p>
                 </div>
 
-                {/* Demo Buttons */}
+                {/* Demo Buttons Hint: These won't work perfectly until actual users exist in Firebase, but we keep the UI */}
+                <div className="alert alert-info text-xs py-2">
+                    <span>Note: Demo accounts must be registered first in Firebase to work.</span>
+                </div>
                 <div className="flex gap-4 justify-center">
                     <button
                         type="button"
@@ -96,6 +106,8 @@ const Login = () => {
                 </div>
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    {loginError && <div className="alert alert-error text-sm py-2">{loginError}</div>}
+
                     <div className="space-y-4">
                         <div className="form-control">
                             <label className="label">
@@ -158,10 +170,10 @@ const Login = () => {
                 <div className="divider">OR</div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <button className="btn btn-outline w-full gap-2">
+                    <button onClick={() => handleSocialLogin('google')} className="btn btn-outline w-full gap-2">
                         <FaGoogle className="text-red-500" /> Google
                     </button>
-                    <button className="btn btn-outline w-full gap-2">
+                    <button onClick={() => handleSocialLogin('github')} className="btn btn-outline w-full gap-2">
                         <FaGithub /> GitHub
                     </button>
                 </div>

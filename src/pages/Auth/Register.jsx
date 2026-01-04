@@ -4,7 +4,7 @@ import { FaGoogle, FaGithub, FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } fro
 import { useAuth } from '../../providers/AuthProvider';
 
 const Register = () => {
-    const { login } = useAuth();
+    const { createUser, updateUserProfile, signInWithGoogle, signInWithGithub } = useAuth();
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
@@ -16,6 +16,7 @@ const Register = () => {
     const [errors, setErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [registerError, setRegisterError] = useState("");
 
     const validateForm = () => {
         let newErrors = {};
@@ -38,9 +39,8 @@ const Register = () => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-        if (errors[e.target.name]) {
-            setErrors({ ...errors, [e.target.name]: "" });
-        }
+        if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: "" });
+        setRegisterError("");
     };
 
     const handleSubmit = async (e) => {
@@ -48,18 +48,36 @@ const Register = () => {
         if (!validateForm()) return;
 
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
-            const mockUser = {
-                id: Math.floor(Math.random() * 1000),
-                name: formData.name,
-                email: formData.email,
-                role: 'user'
-            };
-            login(mockUser);
+        setRegisterError("");
+
+        try {
+            // 1. Create User
+            await createUser(formData.email, formData.password);
+
+            // 2. Update Profile (Name) - Photo URL is simplified here
+            await updateUserProfile(formData.name, `https://ui-avatars.com/api/?name=${formData.name}&background=random`);
+
             navigate('/dashboard');
-        }, 1500);
+        } catch (error) {
+            console.error(error);
+            if (error.code === 'auth/email-already-in-use') {
+                setRegisterError("Email is already registered.");
+            } else {
+                setRegisterError("Failed to register. Please try again.");
+            }
+            setIsLoading(false);
+        }
+    };
+
+    const handleSocialLogin = async (provider) => {
+        try {
+            if (provider === 'google') await signInWithGoogle();
+            else if (provider === 'github') await signInWithGithub();
+            navigate('/dashboard');
+        } catch (error) {
+            console.error(error);
+            setRegisterError(`Failed to sign up with ${provider}.`);
+        }
     };
 
     return (
@@ -75,6 +93,8 @@ const Register = () => {
                 </div>
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    {registerError && <div className="alert alert-error text-sm py-2">{registerError}</div>}
+
                     <div className="space-y-4">
                         <div className="form-control">
                             <label className="label">
@@ -170,10 +190,10 @@ const Register = () => {
                 <div className="divider">OR</div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <button className="btn btn-outline w-full gap-2">
+                    <button onClick={() => handleSocialLogin('google')} className="btn btn-outline w-full gap-2">
                         <FaGoogle className="text-red-500" /> Google
                     </button>
-                    <button className="btn btn-outline w-full gap-2">
+                    <button onClick={() => handleSocialLogin('github')} className="btn btn-outline w-full gap-2">
                         <FaGithub /> GitHub
                     </button>
                 </div>
