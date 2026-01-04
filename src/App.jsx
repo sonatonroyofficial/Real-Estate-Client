@@ -6,6 +6,7 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import PrivateRoute from './routes/PrivateRoute';
 import { AuthProvider } from './providers/AuthProvider';
+import AllListings from './pages/Listings/AllListings';
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
           <Route path="register" element={<Register />} />
 
           {/* Public Routes */}
-          <Route path="properties" element={<div className="p-10 text-center text-3xl">Properties Page</div>} />
+          <Route path="properties" element={<AllListings />} />
           <Route path="contact" element={<div className="p-10 text-center text-3xl">Contact Page</div>} />
 
           {/* Protected Routes */}
