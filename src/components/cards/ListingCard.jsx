@@ -57,7 +57,7 @@ const ListingCard = ({ listing }) => {
                     </div>
 
                     <Link
-                        to={`/properties/${id}`}
+                        to={`/listing/${id}`}
                         className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300"
                     >
                         <ArrowUpRight size={20} />

@@ -4,9 +4,12 @@ import MainLayout from './layout/MainLayout';
 import Home from './pages/Home/Home';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import ListingDetails from './pages/Listings/ListingDetails';
 import PrivateRoute from './routes/PrivateRoute';
 import { AuthProvider } from './providers/AuthProvider';
 import AllListings from './pages/Listings/AllListings';
+import DashboardLayout from './layout/DashboardLayout';
+import DashboardHome from './pages/Dashboard/DashboardHome';
 
 function App() {
   return (
@@ -19,15 +22,20 @@ function App() {
 
           {/* Public Routes */}
           <Route path="properties" element={<AllListings />} />
+          <Route path="listing/:id" element={<ListingDetails />} />
           <Route path="contact" element={<div className="p-10 text-center text-3xl">Contact Page</div>} />
 
-          {/* Protected Routes */}
-          <Route path="dashboard" element={<PrivateRoute><div className="p-10 text-center text-3xl">Dashboard (Protected)</div></PrivateRoute>} />
-          <Route path="favorites" element={<PrivateRoute><div className="p-10 text-center text-3xl">Favorites (Protected)</div></PrivateRoute>} />
-          <Route path="profile" element={<PrivateRoute><div className="p-10 text-center text-3xl">Profile (Protected)</div></PrivateRoute>} />
-          <Route path="settings" element={<PrivateRoute><div className="p-10 text-center text-3xl">Settings (Protected)</div></PrivateRoute>} />
-
           <Route path="*" element={<div className="p-10 text-center text-3xl">404 Not Found</div>} />
+        </Route>
+
+        {/* Dashboard Layout Routes */}
+        <Route path="/dashboard" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
+          <Route index element={<DashboardHome />} />
+          <Route path="profile" element={<div className="p-10 text-center text-3xl">My Profile</div>} />
+          <Route path="bookings" element={<div className="p-10 text-center text-3xl">My Bookings</div>} />
+          <Route path="users" element={<div className="p-10 text-center text-3xl">Manage Users</div>} />
+          <Route path="listings" element={<div className="p-10 text-center text-3xl">Manage Listings</div>} />
+          <Route path="stats" element={<div className="p-10 text-center text-3xl">Statistics</div>} />
         </Route>
       </Routes>
     </AuthProvider>
