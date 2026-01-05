@@ -10,6 +10,14 @@ import { AuthProvider } from './providers/AuthProvider';
 import AllListings from './pages/Listings/AllListings';
 import DashboardLayout from './layout/DashboardLayout';
 import DashboardHome from './pages/Dashboard/DashboardHome';
+import ManageUsers from './pages/Dashboard/ManageUsers';
+import ManageListings from './pages/Dashboard/ManageListings';
+import Statistics from './pages/Dashboard/Statistics';
+import NotFound from './pages/NotFound/NotFound';
+import Contact from './pages/Contact/Contact';
+import Profile from './pages/Dashboard/Profile';
+import MyBookings from './pages/Dashboard/MyBookings';
+import ManageBookings from './pages/Dashboard/ManageBookings';
 
 function App() {
   return (
@@ -23,19 +31,20 @@ function App() {
           {/* Public Routes */}
           <Route path="properties" element={<AllListings />} />
           <Route path="listing/:id" element={<ListingDetails />} />
-          <Route path="contact" element={<div className="p-10 text-center text-3xl">Contact Page</div>} />
+          <Route path="contact" element={<Contact />} />
 
-          <Route path="*" element={<div className="p-10 text-center text-3xl">404 Not Found</div>} />
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         {/* Dashboard Layout Routes */}
         <Route path="/dashboard" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
           <Route index element={<DashboardHome />} />
-          <Route path="profile" element={<div className="p-10 text-center text-3xl">My Profile</div>} />
-          <Route path="bookings" element={<div className="p-10 text-center text-3xl">My Bookings</div>} />
-          <Route path="users" element={<div className="p-10 text-center text-3xl">Manage Users</div>} />
-          <Route path="listings" element={<div className="p-10 text-center text-3xl">Manage Listings</div>} />
-          <Route path="stats" element={<div className="p-10 text-center text-3xl">Statistics</div>} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="bookings" element={<MyBookings />} />
+          <Route path="all-bookings" element={<ManageBookings />} />
+          <Route path="users" element={<ManageUsers />} />
+          <Route path="listings" element={<ManageListings />} />
+          <Route path="stats" element={<Statistics />} />
         </Route>
       </Routes>
     </AuthProvider>

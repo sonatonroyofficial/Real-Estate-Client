@@ -8,8 +8,9 @@ const Footer = () => {
             <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {/* Brand & About */}
                 <div>
-                    <Link to="/" className="text-2xl font-bold text-primary-content flex items-center gap-1 mb-4">
-                        Real<span className="text-secondary">Estate</span>
+                    <Link to="/" className="flex items-center gap-2 mb-4 group w-fit">
+                        <img src="/brandbay_logo.png" alt="BrandBay" className="h-10 w-auto bg-white rounded-lg p-1" />
+                        <span className="text-2xl font-bold text-white">BrandBay</span>
                     </Link>
                     <p className="text-sm leading-relaxed opacity-80">
                         Your trusted partner in finding the perfect home. We specialize in luxury properties and exceptional client service across the globe.
@@ -58,14 +59,14 @@ const Footer = () => {
                         </li>
                         <li className="flex items-center gap-3">
                             <FaEnvelope className="text-secondary" />
-                            <span>info@realestateluxury.com</span>
+                            <span>info@brandbay.com</span>
                         </li>
                     </ul>
                 </div>
             </div>
 
             <div className="border-t border-neutral-content/20 mt-10 pt-6 text-center text-xs opacity-60">
-                <p>&copy; {new Date().getFullYear()} RealEstate Inc. All rights reserved.</p>
+                <p>&copy; {new Date().getFullYear()} BrandBay Inc. All rights reserved.</p>
             </div>
         </footer>
     );

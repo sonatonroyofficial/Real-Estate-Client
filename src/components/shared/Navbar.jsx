@@ -54,8 +54,8 @@ const Navbar = () => {
                         {navLinks}
                     </ul>
                 </div>
-                <Link to="/" className="btn btn-ghost text-2xl font-bold text-primary">
-                    Real<span className="text-secondary">Estate</span>
+                <Link to="/" className="btn btn-ghost group">
+                    <img src="/brandbay_logo.png" alt="BrandBay" className="h-10 w-auto" />
                 </Link>
             </div>
             <div className="navbar-center hidden lg:flex">
@@ -81,8 +81,8 @@ const Navbar = () => {
                         </div>
                         <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
                             <li className="menu-title px-4 py-2">Hi, {user.name}</li>
-                            <li><Link to="/profile" className="justify-between">Profile <span className="badge badge-sm badge-secondary">New</span></Link></li>
-                            <li><Link to="/settings">Settings</Link></li>
+                            <li><Link to="/dashboard/profile" className="justify-between">Profile <span className="badge badge-sm badge-secondary">New</span></Link></li>
+                            <li><Link to="/dashboard/profile">Settings</Link></li>
                             <li><button onClick={handleLogout} className="text-error">Logout</button></li>
                         </ul>
                     </div>

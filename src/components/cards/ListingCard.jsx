@@ -4,7 +4,8 @@ import { Star, MapPin, ArrowUpRight, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ListingCard = ({ listing }) => {
-    const { id, title, price, location, rating, image, category, type } = listing;
+    const { _id, id, title, price, location, rating, image, category, type } = listing;
+    const linkId = _id || id;
 
     return (
         <div className="group bg-white rounded-3xl p-3 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -38,7 +39,7 @@ const ListingCard = ({ listing }) => {
                     </h3>
                     <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-md border border-yellow-100">
                         <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs font-bold text-yellow-700">{rating}</span>
+                        <span className="text-xs font-bold text-yellow-700">{rating || 4.5}</span>
                     </div>
                 </div>
 
@@ -57,7 +58,7 @@ const ListingCard = ({ listing }) => {
                     </div>
 
                     <Link
-                        to={`/listing/${id}`}
+                        to={`/listing/${linkId}`}
                         className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300"
                     >
                         <ArrowUpRight size={20} />

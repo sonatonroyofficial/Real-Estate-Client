@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaGoogle, FaGithub, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaGithub, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from '../../providers/AuthProvider';
 
 const Login = () => {
-    const { signIn, signInWithGoogle, signInWithGithub } = useAuth();
+    const { signIn, createUser, updateUserProfile, signInWithGoogle, signInWithGithub } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || "/dashboard";
@@ -48,27 +49,54 @@ const Login = () => {
             navigate(from, { replace: true });
         } catch (error) {
             console.error(error);
-            setLoginError("Invalid email or password. Please try again.");
+
+            // Auto-Healing: If Demo Account doesn't exist, create it!
+            if ((formData.email === 'admin@brandbay.com' || formData.email === 'user@brandbay.com') &&
+                (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.message.includes('not-found') || error.message.includes('invalid-credential'))) {
+                try {
+                    console.log("Demo account not found, creating it automatically...");
+                    await createUser(formData.email, formData.password);
+                    // Add a display name
+                    const name = formData.email.includes('admin') ? 'Demo Admin' : 'Demo User';
+                    await updateUserProfile(name, "https://ui-avatars.com/api/?name=" + name);
+
+                    navigate(from, { replace: true });
+                    return; // Exit successfully
+                } catch (createErr) {
+                    console.error("Failed to auto-create demo account", createErr);
+                    setLoginError("Failed to create demo account: " + createErr.message);
+                }
+            } else {
+                setLoginError("Invalid email or password. Please try again.");
+            }
             setIsLoading(false);
         }
     };
 
+    // Auto-login handler for buttons
+    const handleDemoLogin = async (role) => {
+        const demoEmail = role === 'admin' ? 'admin@brandbay.com' : 'user@brandbay.com';
+        const demoPass = 'password123';
+        setFormData({ email: demoEmail, password: demoPass });
+
+        // Optional: Trigger submit immediately? 
+        // Let's just fill it for now as per original design, user clicks "Sign In".
+        // But the user complained "login hocche na" (login not happening), so maybe auto-clicking is better UX.
+        // I'll leave it as filling the form to let them see credentials, but maybe add a toast or hint?
+        // Actually, let's keep it simple. The self-healing in handleSubmit is the key fix.
+    };
+
     const handleSocialLogin = async (provider) => {
         try {
-            if (provider === 'google') await signInWithGoogle();
-            else if (provider === 'github') await signInWithGithub();
+            if (provider === 'google') {
+                await signInWithGoogle();
+            } else if (provider === 'github') {
+                await signInWithGithub();
+            }
             navigate(from, { replace: true });
         } catch (error) {
             console.error(error);
             setLoginError(`Failed to login with ${provider}.`);
-        }
-    };
-
-    const handleDemoLogin = (role) => {
-        if (role === 'admin') {
-            setFormData({ email: 'admin@brandbay.com', password: 'password123' });
-        } else {
-            setFormData({ email: 'user@brandbay.com', password: 'password123' });
         }
     };
 
@@ -170,8 +198,8 @@ const Login = () => {
                 <div className="divider">OR</div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => handleSocialLogin('google')} className="btn btn-outline w-full gap-2">
-                        <FaGoogle className="text-red-500" /> Google
+                    <button onClick={() => handleSocialLogin('google')} className="btn btn-outline w-full gap-2 hover:bg-white hover:border-gray-300">
+                        <FcGoogle size={22} /> Google
                     </button>
                     <button onClick={() => handleSocialLogin('github')} className="btn btn-outline w-full gap-2">
                         <FaGithub /> GitHub

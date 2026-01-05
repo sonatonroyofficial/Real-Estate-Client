@@ -1,35 +1,45 @@
 
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, User, ShoppingBag, Star,
     Users, Building, BarChart3, Menu, X, Rocket, LogOut
 } from 'lucide-react';
-import { useAuth } from '../providers/AuthProvider'; // Assuming we have this
+import { useAuth } from '../providers/AuthProvider';
 
 const DashboardLayout = () => {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
 
-    // Mock user role - In real app, get from AuthContext
-    // const { user, logOut } = useAuth();
-    // For demo purposes, let's toggle this variable or fetch from a context mock
-    const role = 'admin'; // 'user' or 'admin'
+    const { user, logout } = useAuth();
+
+    // Determine Role (Fallback to user if not specified)
+    const role = (user?.role === 'admin' || user?.email === 'admin@brandbay.com') ? 'admin' : 'user';
 
     const userLinks = [
         { name: 'My Profile', path: '/dashboard/profile', icon: User },
         { name: 'My Bookings', path: '/dashboard/bookings', icon: ShoppingBag },
-        { name: 'My Reviews', path: '/dashboard/reviews', icon: Star },
     ];
 
     const adminLinks = [
         { name: 'Overview', path: '/dashboard', icon: LayoutDashboard },
         { name: 'Manage Users', path: '/dashboard/users', icon: Users },
         { name: 'Manage Listings', path: '/dashboard/listings', icon: Building },
+        { name: 'Manage Bookings', path: '/dashboard/all-bookings', icon: ShoppingBag }, // New Link
         { name: 'Statistics', path: '/dashboard/stats', icon: BarChart3 },
     ];
 
     const links = role === 'admin' ? adminLinks : userLinks;
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (error) {
+            console.error("Logout failed", error);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 flex">
@@ -48,18 +58,18 @@ const DashboardLayout = () => {
             `}>
                 <div className="h-full flex flex-col p-6">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2 mb-10 text-2xl font-bold text-gray-900 group">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
-                            <Rocket size={20} />
-                        </div>
-                        BrandBay
+                    <Link to="/" className="flex items-center gap-2 mb-10 group">
+                        <img src="/brandbay_logo.png" alt="BrandBay" className="h-10 w-auto" />
                     </Link>
 
                     {/* Navigation */}
                     <nav className="flex-1 space-y-1">
                         {links.map((link) => {
                             const Icon = link.icon;
-                            const isActive = location.pathname === link.path;
+                            // Check if exact match for root or startsWith for nested
+                            const isActive = link.path === '/dashboard'
+                                ? location.pathname === link.path
+                                : location.pathname.startsWith(link.path);
 
                             return (
                                 <Link
@@ -85,14 +95,21 @@ const DashboardLayout = () => {
                     <div className="border-t border-gray-100 pt-6 mt-6">
                         <div className="flex items-center gap-3 mb-4 px-2">
                             <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-                                <img src="https://i.pravatar.cc/150?u=admin" alt="User" className="w-full h-full object-cover" />
+                                <img
+                                    src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName || user?.email || 'User'}&background=random`}
+                                    alt="User"
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
-                            <div>
-                                <p className="text-sm font-bold text-gray-900">Admin User</p>
-                                <p className="text-xs text-gray-400">admin@brandbay.com</p>
+                            <div className="overflow-hidden">
+                                <p className="text-sm font-bold text-gray-900 truncate">{user?.displayName || 'User'}</p>
+                                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
                             </div>
                         </div>
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-colors text-sm font-medium">
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-colors text-sm font-medium"
+                        >
                             <LogOut size={16} />
                             Sign Out
                         </button>

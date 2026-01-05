@@ -1,0 +1,30 @@
+[
+    {
+        "id": 1,
+        "name": "Luxury",
+        "slug": "luxury",
+        "image": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=600",
+        "icon": "diamond"
+    },
+    {
+        "id": 2,
+        "name": "Apartment",
+        "slug": "apartment",
+        "image": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600",
+        "icon": "building"
+    },
+    {
+        "id": 3,
+        "name": "House",
+        "slug": "house",
+        "image": "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=600",
+        "icon": "home"
+    },
+    {
+        "id": 4,
+        "name": "Villa",
+        "slug": "villa",
+        "image": "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&q=80&w=600",
+        "icon": "sun"
+    }
+]

@@ -13,21 +13,21 @@ const HeroSection = () => {
     const slides = [
         {
             id: 1,
-            image: "https://images.unsplash.com/photo-1600596542815-e3289cab473c?q=80&w=2000&auto=format&fit=crop",
+            image: "/images/hero_banner_1.png",
             title: "Discover Your Dream Sanctuary",
             subtitle: "Luxury estates, modern apartments, and exclusive villas in prime locations.",
             cta: "Explore Properties"
         },
         {
             id: 2,
-            image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2000&auto=format&fit=crop",
+            image: "/images/hero_banner_2.png",
             title: "Experience Modern Living",
             subtitle: "Architectural masterpieces designed for comfort, style, and elegance.",
             cta: "View Collections"
         },
         {
             id: 3,
-            image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2000&auto=format&fit=crop",
+            image: "/images/hero_banner_3.png",
             title: "Find a Place to Call Home",
             subtitle: "From cozy cottages to sprawling mansions, we have it all.",
             cta: "Start Searching"
@@ -39,6 +39,7 @@ const HeroSection = () => {
             <Swiper
                 modules={[Autoplay, EffectFade, Navigation, Pagination]}
                 effect="fade"
+                fadeEffect={{ crossFade: true }}
                 spaceBetween={0}
                 slidesPerView={1}
                 autoplay={{ delay: 5000, disableOnInteraction: false }}

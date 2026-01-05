@@ -1,8 +1,28 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import HeroSection from '../../components/home/HeroSection';
 import SectionTitle from '../../components/shared/SectionTitle';
+import { Home as HomeIcon, ShieldCheck, Banknote, Quote, Star } from 'lucide-react';
 
 const Home = () => {
+    const [categories, setCategories] = useState([]);
+    const [popularListings, setPopularListings] = useState([]);
+
+    useEffect(() => {
+        // Fetch Categories
+        fetch('http://localhost:5000/api/categories')
+            .then(res => res.json())
+            .then(data => setCategories(data))
+            .catch(err => console.error("Failed to load categories", err));
+
+        // Fetch Listings (and take only first 3 for popular section)
+        fetch('http://localhost:5000/api/listings')
+            .then(res => res.json())
+            .then(data => setPopularListings(data.slice(0, 3)))
+            .catch(err => console.error("Failed to load listings", err));
+    }, []);
+
     return (
         <div className="pb-20">
             {/* 1. Hero Section */}
@@ -19,13 +39,31 @@ const Home = () => {
                     <SectionTitle title="Why Choose Us" subtitle="Our Promise" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                         {[
-                            { title: "Wide Range of Properties", desc: "Access to thousands of exclusive listings." },
-                            { title: "Trusted by Thousands", desc: "Over 10 years of experience in the market." },
-                            { title: "Financing Made Easy", desc: "We help you find the best mortgage rates." }
+                            {
+                                icon: <HomeIcon size={32} className="text-blue-600" />,
+                                title: "Wide Range of Properties",
+                                desc: "Explore a vast portfolio of exclusive listings tailored to your lifestyle, from cozy cottages to luxury estates.",
+                                bg: "bg-blue-50"
+                            },
+                            {
+                                icon: <ShieldCheck size={32} className="text-emerald-600" />,
+                                title: "Trusted by Thousands",
+                                desc: "With over 10 years of experience, we've helped thousands find their perfect home with transparency and trust.",
+                                bg: "bg-emerald-50"
+                            },
+                            {
+                                icon: <Banknote size={32} className="text-purple-600" />,
+                                title: "Financing Made Easy",
+                                desc: "Our financial experts guide you through mortgage options to secure the best rates for your investment.",
+                                bg: "bg-purple-50"
+                            }
                         ].map((item, idx) => (
-                            <div key={idx} className="p-6 bg-base-200 rounded-xl hover:shadow-lg transition-shadow">
-                                <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                                <p className="opacity-80">{item.desc}</p>
+                            <div key={idx} className="group p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                                <div className={`w-16 h-16 rounded-2xl ${item.bg} mx-auto flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                                    {item.icon}
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
+                                <p className="text-gray-500 leading-relaxed">{item.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -35,13 +73,23 @@ const Home = () => {
                 <section>
                     <SectionTitle title="Explore by Category" subtitle="Find Your Niche" />
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {/* Placeholders for Categories */}
-                        {['Apartments', 'Villas', 'Offices', 'Condos'].map((cat, idx) => (
-                            <div key={idx} className="h-40 bg-gray-300 rounded-xl flex items-center justify-center text-xl font-bold relative overflow-hidden group cursor-pointer">
-                                <span className="z-10 text-white drop-shadow-md">{cat}</span>
-                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors"></div>
-                            </div>
-                        ))}
+                        {categories.length > 0 ? (
+                            categories.map((cat) => (
+                                <Link to="/properties" key={cat.id} className="h-40 relative rounded-xl overflow-hidden group cursor-pointer shadow-md block">
+                                    <img
+                                        src={cat.image}
+                                        alt={cat.name}
+                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+                                        <span className="text-white text-xl font-bold drop-shadow-md tracking-wide">{cat.name}</span>
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                            // Fallback Skeleton
+                            [1, 2, 3, 4].map(n => <div key={n} className="h-40 bg-gray-200 rounded-xl animate-pulse"></div>)
+                        )}
                     </div>
                 </section>
 
@@ -49,19 +97,50 @@ const Home = () => {
                 <section>
                     <SectionTitle title="Popular Listings" subtitle="Trending Now" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* Card Placeholders */}
-                        {[1, 2, 3].map((item) => (
-                            <div key={item} className="card bg-base-100 shadow-xl">
-                                <figure><img src={`https://images.unsplash.com/photo-156${item}04324-f25a5e3e57d8?w=500&auto=format&fit=crop&q=60`} alt="House" className="h-48 w-full object-cover" /></figure>
-                                <div className="card-body">
-                                    <h2 className="card-title">Modern Home {item}</h2>
-                                    <p>Description of the property goes here.</p>
-                                    <div className="card-actions justify-end">
-                                        <button className="btn btn-primary btn-sm">View Details</button>
+                        {popularListings.length > 0 ? (
+                            popularListings.map((item) => (
+                                <div key={item._id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-100">
+                                    <figure className="h-56 overflow-hidden">
+                                        <img
+                                            src={item.image || (item.images && item.images[0])}
+                                            alt={item.title}
+                                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                                        />
+                                    </figure>
+                                    <div className="card-body">
+                                        <div className="flex justify-between items-start">
+                                            <h2 className="card-title text-lg font-bold line-clamp-1">{item.title}</h2>
+                                            <div className="badge badge-secondary badge-outline text-xs">{item.category}</div>
+                                        </div>
+                                        <p className="font-semibold text-primary text-xl">
+                                            ${item.price.toLocaleString()}
+                                            <span className="text-xs text-gray-400 font-normal ml-1">
+                                                {item.type === 'rent' ? '/mo' : ''}
+                                            </span>
+                                        </p>
+                                        <p className="text-sm text-gray-500 flex items-center gap-1">
+                                            <span className="truncate">{item.location}</span>
+                                        </p>
+                                        <div className="card-actions justify-end mt-4">
+                                            <Link to={`/listing/${item._id}`} className="btn btn-primary btn-sm w-full">
+                                                View Details
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            // Fallback Skeleton
+                            [1, 2, 3].map(n => (
+                                <div key={n} className="card bg-base-100 shadow-xl h-96">
+                                    <div className="h-48 bg-gray-200 animate-pulse rounded-t-2xl"></div>
+                                    <div className="p-6 space-y-4">
+                                        <div className="h-6 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </section>
 
@@ -89,28 +168,105 @@ const Home = () => {
 
                 {/* 6. Testimonials */}
                 <section>
-                    <SectionTitle title="Client Stories" subtitle="Testimonials" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="bg-base-200 p-6 rounded-xl relative">
-                            <p className="italic mb-4">"Found my dream home in less than a week! The team was incredibly helpful."</p>
-                            <div className="font-bold">- Sarah J.</div>
-                        </div>
-                        <div className="bg-base-200 p-6 rounded-xl relative">
-                            <p className="italic mb-4">"Professional, transparent, and efficient. detailed analytics helped me invest wisely."</p>
-                            <div className="font-bold">- Michael R.</div>
-                        </div>
+                    <SectionTitle title="Client Stories" subtitle="What People Say" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {[
+                            {
+                                name: "Sarah Jenkins",
+                                role: "Homeowner",
+                                image: "/images/client_sarah.png",
+                                text: "Found my dream home in less than a week! The team was incredibly helpful and understood exactly what I was looking for.",
+                                rating: 5
+                            },
+                            {
+                                name: "Michael Ross",
+                                role: "Property Investor",
+                                image: "/images/client_michael.png",
+                                text: "Professional, transparent, and efficient. The detailed market analytics helped me make a wise investment decision.",
+                                rating: 5
+                            },
+                            {
+                                name: "Emily Gilmore",
+                                role: "Villa Owner",
+                                image: "/images/client_emily.png",
+                                text: "Selling my property was seamless. They handled everything from staging to the final paperwork with absolute professionalism.",
+                                rating: 4
+                            }
+                        ].map((item, idx) => (
+                            <div key={idx} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative hover:shadow-xl transition-shadow">
+                                <Quote className="absolute top-8 right-8 text-blue-100 rotate-180" size={48} />
+                                <div className="flex gap-1 mb-6">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                        <Star key={i} size={16} className={`${i < item.rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}`} />
+                                    ))}
+                                </div>
+                                <p className="text-gray-600 mb-8 leading-relaxed italic relative z-10">"{item.text}"</p>
+                                <div className="flex items-center gap-4">
+                                    <img
+                                        src={item.image}
+                                        alt={item.name}
+                                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+                                    />
+                                    <div>
+                                        <h4 className="font-bold text-gray-900">{item.name}</h4>
+                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{item.role}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </section>
 
                 {/* 7. Blog Highlights */}
                 <section>
                     <SectionTitle title="Market Insights" subtitle="Latest News" />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex flex-col gap-2">
-                                <div className="h-48 bg-gray-300 rounded-xl"></div>
-                                <h4 className="font-bold text-lg">Real Estate Trends 2024</h4>
-                                <p className="text-sm opacity-70">Read more about the upcoming market shifts...</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {[
+                            {
+                                image: "/images/blog_market_trends.png",
+                                category: "Trends",
+                                date: "Jan 10, 2024",
+                                title: "Real Estate Market Trends 2024",
+                                desc: "An in-depth analysis of the upcoming shifts in the global real estate market and what it means for investors."
+                            },
+                            {
+                                image: "/images/blog_eco_living.png",
+                                category: "Sustainability",
+                                date: "Jan 08, 2024",
+                                title: "The Rise of Eco-Friendly Homes",
+                                desc: "Why sustainable living is not just a trend but the future of modern housing architecture."
+                            },
+                            {
+                                image: "/images/blog_interior_design.png",
+                                category: "Design",
+                                date: "Jan 05, 2024",
+                                title: "Top Interior Design Styles",
+                                desc: "Discover the latest interior design themes that are transforming living spaces this year."
+                            }
+                        ].map((item, idx) => (
+                            <div key={idx} className="group cursor-pointer bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col h-full hover:-translate-y-2">
+                                <div className="h-60 overflow-hidden relative">
+                                    <img
+                                        src={item.image}
+                                        alt={item.title}
+                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                    />
+                                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-gray-900 border border-white/50 shadow-sm">
+                                        {item.category}
+                                    </div>
+                                </div>
+                                <div className="p-6 flex flex-col flex-grow">
+                                    <div className="text-gray-400 text-xs font-medium mb-3 uppercase tracking-wider">{item.date}</div>
+                                    <h4 className="font-bold text-xl text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                                        {item.title}
+                                    </h4>
+                                    <p className="text-gray-500 text-sm leading-relaxed mb-4 flex-grow opacity-80 line-clamp-3">
+                                        {item.desc}
+                                    </p>
+                                    <div className="flex items-center text-blue-600 font-semibold text-sm group-hover:underline">
+                                        Read Article
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -150,7 +306,7 @@ const Home = () => {
                 {/* 10. Final CTA */}
                 <section className="text-center py-10">
                     <h2 className="text-4xl font-bold mb-6">Ready to Find Your Home?</h2>
-                    <button className="btn btn-primary btn-lg">Get Started Now</button>
+                    <Link to="/properties" className="btn btn-primary btn-lg">Get Started Now</Link>
                 </section>
 
             </div>

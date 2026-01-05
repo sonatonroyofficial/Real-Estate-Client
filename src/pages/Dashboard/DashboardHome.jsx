@@ -1,32 +1,46 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
-import { Users, DollarSign, ShoppingBag, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, DollarSign, Home, Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import LoadingSpinner from '../../components/loaders/LoadingSpinner';
 
-// Mock Data
-const SALES_DATA = [
-    { name: 'Jan', sales: 4000, revenue: 2400 },
-    { name: 'Feb', sales: 3000, revenue: 1398 },
-    { name: 'Mar', sales: 2000, revenue: 9800 },
-    { name: 'Apr', sales: 2780, revenue: 3908 },
-    { name: 'May', sales: 1890, revenue: 4800 },
-    { name: 'Jun', sales: 2390, revenue: 3800 },
-    { name: 'Jul', sales: 3490, revenue: 4300 },
-];
-
-const CATEGORY_DATA = [
-    { name: 'Luxury', value: 400 },
-    { name: 'Apartments', value: 300 },
-    { name: 'Houses', value: 300 },
-    { name: 'Villas', value: 200 },
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 const DashboardHome = () => {
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('http://localhost:5000/api/stats')
+            .then(res => res.json())
+            .then(data => {
+                setStats(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Failed to fetch dashboard stats", err);
+                setLoading(false);
+            });
+    }, []);
+
+    if (loading) return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>;
+    if (!stats) return <div className="p-10 text-center text-red-500">Failed to load dashboard data.</div>;
+
+    // Process Data for Charts
+    const categoryData = stats.listingsByCategory?.map(item => ({
+        name: item._id,
+        value: item.count
+    })) || [];
+
+    // Calculate Active Listings
+    const activeListingsCount = stats.listingsByStatus?.find(s => s._id === 'Available')?.count || 0;
+
+    // Use Real Bookings Data
+    const bookingsData = stats.monthlyBookings || [];
+
     return (
         <div className="space-y-8 animate-fade-in-up">
             {/* Header */}
@@ -38,20 +52,44 @@ const DashboardHome = () => {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Revenue', value: '$54,239', icon: DollarSign, change: '+12.5%', isUp: true },
-                    { label: 'Total Users', value: '2,543', icon: Users, change: '+8.2%', isUp: true },
-                    { label: 'New Bookings', value: '145', icon: ShoppingBag, change: '-3.4%', isUp: false },
-                    { label: 'Active Listings', value: '45', icon: TrendingUp, change: '+2.4%', isUp: true },
+                    {
+                        label: 'Total Asset Value',
+                        value: `$${(stats.totalListingValue || 0).toLocaleString()}`,
+                        icon: DollarSign,
+                        change: '+12.5%',
+                        isUp: true,
+                        color: 'text-green-600 bg-green-50'
+                    },
+                    {
+                        label: 'Total Users',
+                        value: stats.totalUsers,
+                        icon: Users,
+                        change: '+8.2%',
+                        isUp: true,
+                        color: 'text-blue-600 bg-blue-50'
+                    },
+                    {
+                        label: 'Total Listings',
+                        value: stats.totalListings,
+                        icon: Home,
+                        change: '+3.4%',
+                        isUp: true,
+                        color: 'text-purple-600 bg-purple-50'
+                    },
+                    {
+                        label: 'Active Listings',
+                        value: activeListingsCount,
+                        icon: Activity,
+                        change: '+2.4%',
+                        isUp: true,
+                        color: 'text-orange-600 bg-orange-50'
+                    },
                 ].map((stat, idx) => (
                     <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
-                            <div className={`p-3 rounded-xl ${idx === 0 ? 'bg-green-50 text-green-600' : idx === 1 ? 'bg-blue-50 text-blue-600' : idx === 2 ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600'}`}>
+                            <div className={`p-3 rounded-xl ${stat.color}`}>
                                 <stat.icon size={24} />
                             </div>
-                            <span className={`flex items-center text-xs font-semibold px-2 py-1 rounded-full ${stat.isUp ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                                {stat.isUp ? <ArrowUpRight size={14} className="mr-1" /> : <ArrowDownRight size={14} className="mr-1" />}
-                                {stat.change}
-                            </span>
                         </div>
                         <h3 className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</h3>
                         <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
@@ -61,20 +99,16 @@ const DashboardHome = () => {
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Revenue Chart */}
+                {/* Bookings Trend Chart (Real Data) */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-gray-900">Revenue Analytics</h3>
-                        <select className="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-1 focus:outline-none">
-                            <option>This Year</option>
-                            <option>Last Year</option>
-                        </select>
+                        <h3 className="text-lg font-bold text-gray-900">Booking Trends</h3>
                     </div>
                     <div className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={SALES_DATA} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <AreaChart data={bookingsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <defs>
-                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                    <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
                                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                     </linearGradient>
@@ -86,7 +120,7 @@ const DashboardHome = () => {
                                     contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: 'none' }}
                                     itemStyle={{ color: '#1f2937', fontWeight: 'bold' }}
                                 />
-                                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                                <Area type="monotone" dataKey="bookings" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorBookings)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -95,38 +129,88 @@ const DashboardHome = () => {
                 {/* Category Distribution */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">Listing Categories</h3>
-                    <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={CATEGORY_DATA}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {CATEGORY_DATA.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <div className="flex flex-col gap-3 mt-4">
-                        {CATEGORY_DATA.map((entry, index) => (
-                            <div key={index} className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                                    <span className="text-sm text-gray-600">{entry.name}</span>
-                                </div>
-                                <span className="text-sm font-bold text-gray-900">{((entry.value / 1200) * 100).toFixed(0)}%</span>
+                    {categoryData.length > 0 ? (
+                        <>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={categoryData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            fill="#8884d8"
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {categoryData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
                             </div>
-                        ))}
-                    </div>
+                            <div className="flex flex-col gap-3 mt-4">
+                                {categoryData.map((entry, index) => (
+                                    <div key={index} className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                                            <span className="text-sm text-gray-600">{entry.name}</span>
+                                        </div>
+                                        <span className="text-sm font-bold text-gray-900">
+                                            {((entry.value / stats.totalListings) * 100).toFixed(0)}%
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="h-64 flex items-center justify-center text-gray-400">
+                            No category data available
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Recent Listings Table */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-gray-900">Recent Listings</h3>
+                    <button className="text-blue-600 text-sm font-medium hover:underline">View All</button>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-gray-500 uppercase text-xs font-semibold">
+                            <tr>
+                                <th className="px-6 py-4">Property</th>
+                                <th className="px-6 py-4">Price</th>
+                                <th className="px-6 py-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {stats.recentListings && stats.recentListings.length > 0 ? (
+                                stats.recentListings.map((item) => (
+                                    <tr key={item._id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-gray-900">{item.title}</td>
+                                        <td className="px-6 py-4 text-gray-600">${item.price?.toLocaleString()}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                                                ${item.status === 'Available' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
+                                            `}>
+                                                {item.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="3" className="px-6 py-4 text-center text-gray-500">No recent listings found.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

@@ -1,77 +1,136 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     MapPin, Star, Share2, Heart, CheckCircle,
     Bed, Bath, Square, Calendar, User, Shield
 } from 'lucide-react';
 import ListingCard from '../../components/cards/ListingCard';
 import SectionTitle from '../../components/shared/SectionTitle';
-
-// Mock Data for a single listing
-const MOCK_LISTING = {
-    id: 1,
-    title: "Luxury Villa with Ocean View",
-    price: 1200000,
-    location: "Beverly Hills, CA",
-    rating: 4.8,
-    reviews: 124,
-    description: "Experience the epitome of luxury living in this stunning villa. Featuring panoramic ocean views, a state-of-the-art kitchen, and a private infinity pool, this property is perfect for those seeking elegance and tranquility. The spacious interiors are designed with modern aesthetics, providing a seamless blend of comfort and style.",
-    specs: {
-        bedrooms: 5,
-        bathrooms: 4,
-        area: "4,500 sqft",
-        built: 2021,
-        type: "Villa",
-        parking: "2 Spots"
-    },
-    features: [
-        "Ocean View", "Private Pool", "Smart Home System",
-        "24/7 Security", "Gym", "Home Theater"
-    ],
-    images: [
-        "https://picsum.photos/seed/1/1200/800",
-        "https://picsum.photos/seed/2/800/600",
-        "https://picsum.photos/seed/3/800/600",
-        "https://picsum.photos/seed/4/800/600",
-        "https://picsum.photos/seed/5/800/600"
-    ],
-    agent: {
-        name: "Sarah Johnson",
-        image: "https://i.pravatar.cc/150?u=sarah",
-        phone: "+1 (555) 123-4567"
-    }
-};
+import { useAuth } from '../../providers/AuthProvider';
 
 const MOCK_REVIEWS = [
     { id: 1, user: "John Doe", rating: 5, date: "Oct 12, 2023", comment: "Absolutely stunning property! The views are breathtaking." },
     { id: 2, user: "Jane Smith", rating: 4, date: "Sep 28, 2023", comment: "Great amenities and location, but the price is a bit steep." },
 ];
 
-const MOCK_RELATED = Array.from({ length: 4 }).map((_, i) => ({
-    id: i + 10,
-    title: ["Modern Apartment", "Cozy Cottage", "Beach House", "City Penthouse"][i],
-    price: 450000 + (i * 100000),
-    location: "California, USA",
-    rating: 4.5,
-    image: `https://picsum.photos/seed/${i + 10}/800/600`,
-    category: "Luxury",
-    type: "sale"
-}));
-
 const ListingDetails = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const [listing, setListing] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [bookingLoading, setBookingLoading] = useState(false);
+    const [relatedListings, setRelatedListings] = useState([]);
+
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [bookingNote, setBookingNote] = useState('I am interested in this property. Please contact me.');
+
+    const openBookingModal = () => {
+        if (!user) {
+            navigate('/login', { state: { from: location } });
+            return;
+        }
+        setIsBookingModalOpen(true);
+    };
+
+    const handleBooking = async (e) => {
+        e.preventDefault();
+        setBookingLoading(true);
+        try {
+            const response = await fetch('http://localhost:5000/api/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    listingId: listing._id,
+                    email: user.email,
+                    name: user.displayName,
+                    notes: bookingNote
+                })
+            });
+
+            if (response.ok) {
+                // alert("Booking requested successfully! Check your dashboard."); // Replaced with UI feedback
+                navigate('/dashboard/bookings');
+            } else {
+                alert("Failed to request booking.");
+            }
+        } catch (error) {
+            console.error("Booking failed", error);
+        } finally {
+            setBookingLoading(false);
+            setIsBookingModalOpen(false);
+        }
+    };
 
     useEffect(() => {
-        // Simulate API call
         window.scrollTo(0, 0);
         setLoading(true);
-        setTimeout(() => {
-            setListing(MOCK_LISTING);
-            setLoading(false);
-        }, 800);
+
+        // Fetch Main Listing
+        fetch(`http://localhost:5000/api/listings/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                // Handle Agent Data (could be object or string)
+                let agentData = { name: 'Unknown', image: 'https://ui-avatars.com/api/?name=Agent' };
+                if (typeof data.agent === 'string') {
+                    agentData = { name: data.agent, image: `https://ui-avatars.com/api/?name=${data.agent}` };
+                } else if (data.agent && typeof data.agent === 'object') {
+                    agentData = data.agent;
+                }
+
+                // Handle Images (could be array or single string)
+                const images = data.images && data.images.length > 0
+                    ? data.images
+                    : (data.image ? [data.image] : ['https://placehold.co/600x400']);
+
+                // Create additional mock images if we only have 1 (for gallery view)
+                if (images.length === 1) {
+                    images.push(images[0], images[0], images[0], images[0]);
+                }
+
+                const formattedData = {
+                    ...data,
+                    images: images,
+                    specs: {
+                        bedrooms: data.features?.bedrooms || 0,
+                        bathrooms: data.features?.bathrooms || 0,
+                        area: `${data.features?.sqft || 0} sqft`,
+                        built: data.date ? new Date(data.date).getFullYear() : (data.createdAt ? new Date(data.createdAt).getFullYear() : 'N/A'),
+                        type: data.category,
+                        parking: data.features?.parking ? 'Yes' : 'No'
+                    },
+                    agent: agentData,
+                    features: [
+                        data.features?.parking ? 'Parking' : null,
+                        data.features?.furnished ? 'Furnished' : null,
+                        'Great View', 'Security',
+                        data.category
+                    ].filter(Boolean)
+                };
+                setListing(formattedData);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Failed to load listing", err);
+                setLoading(false);
+            });
+
+        // Fetch Related Listings
+        fetch('http://localhost:5000/api/listings')
+            .then(res => res.json())
+            .then(data => {
+                const related = data
+                    .filter(item => item._id !== id)
+                    .slice(0, 4)
+                    .map(item => ({
+                        ...item,
+                        image: item.image || (item.images && item.images[0]) || 'https://placehold.co/600x400'
+                    }));
+                setRelatedListings(related);
+            })
+            .catch(err => console.error("Failed to load related", err));
+
     }, [id]);
 
     if (loading) return <div className="min-h-screen flex items-center justify-center text-xl">Loading...</div>;
@@ -199,8 +258,12 @@ const ListingDetails = () => {
                             </div>
                         </div>
 
-                        <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition mb-3">
-                            Schedule a Tour
+                        <button
+                            onClick={openBookingModal}
+                            disabled={bookingLoading}
+                            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition mb-3 disabled:opacity-50"
+                        >
+                            {bookingLoading ? 'Processing...' : 'Request Booking'}
                         </button>
                         <button className="w-full bg-white text-gray-700 border border-gray-200 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
                             Contact Agent
@@ -213,11 +276,54 @@ const ListingDetails = () => {
             <div className="max-w-7xl mx-auto px-4 md:px-8 pt-10 border-t border-gray-200 mt-10">
                 <SectionTitle title="Similar Properties" align="left" />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {MOCK_RELATED.map(item => (
-                        <ListingCard key={item.id} listing={item} />
+                    {relatedListings.map(item => (
+                        <ListingCard key={item._id} listing={item} />
                     ))}
                 </div>
             </div>
+            {/* Booking Modal */}
+            {isBookingModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all scale-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-gray-900">Request Booking</h3>
+                            <button onClick={() => setIsBookingModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <span className="sr-only">Close</span>
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleBooking}>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">My Note</label>
+                                <textarea
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition resize-none h-32"
+                                    value={bookingNote}
+                                    onChange={(e) => setBookingNote(e.target.value)}
+                                    placeholder="I'd like to schedule a viewing..."
+                                ></textarea>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBookingModalOpen(false)}
+                                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={bookingLoading}
+                                    className="flex-1 px-4 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {bookingLoading ? 'Sending...' : 'Confirm Request'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

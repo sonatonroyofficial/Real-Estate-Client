@@ -5,25 +5,6 @@ import ListingCard from '../../components/cards/ListingCard';
 import SectionTitle from '../../components/shared/SectionTitle';
 import SkeletonCard from '../../components/loaders/SkeletonCard';
 
-// Mock Data
-const MOCK_LISTINGS = Array.from({ length: 12 }).map((_, i) => ({
-    id: i + 1,
-    title: [
-        "Luxury Villa with Ocean View",
-        "Modern Apartment in City Center",
-        "Cozy Cottage near Woods",
-        "Spacious Family Home",
-        "Penthouse with Private Pool",
-        "Minimalist Studio Loft"
-    ][i % 6] + ` ${i + 1}`,
-    price: [1200000, 450000, 350000, 850000, 2500000, 280000][i % 6],
-    location: ["Beverly Hills, CA", "New York, NY", "Portland, OR", "Austin, TX", "Miami, FL", "Seattle, WA"][i % 6],
-    rating: 4.5 + (i % 5) * 0.1,
-    image: `https://picsum.photos/seed/${i + 1}/800/600`,
-    category: ["Luxury", "Apartment", "House", "Family", "Villa", "Studio"][i % 6],
-    type: i % 3 === 0 ? 'rent' : 'sale'
-}));
-
 const AllListings = () => {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -37,13 +18,25 @@ const AllListings = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
-    // Simulate Fetching Data
+    // Fetch Data from API
     useEffect(() => {
         setLoading(true);
-        setTimeout(() => {
-            setListings(MOCK_LISTINGS);
-            setLoading(false);
-        }, 1500);
+        fetch('http://localhost:5000/api/listings')
+            .then(res => res.json())
+            .then(data => {
+                // Map API data to component structure (matches MongoDB schema now)
+                const formattedData = data.map(item => ({
+                    ...item,
+                    image: item.image || (item.images && item.images[0]) || 'https://placehold.co/600x400',
+                    type: item.type || 'sale' // Fallback
+                }));
+                setListings(formattedData);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Failed to load listings", err);
+                setLoading(false);
+            });
     }, []);
 
     // Helper functions
@@ -170,7 +163,7 @@ const AllListings = () => {
                         {paginatedListings.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up">
                                 {paginatedListings.map(listing => (
-                                    <ListingCard key={listing.id} listing={listing} />
+                                    <ListingCard key={listing._id} listing={listing} />
                                 ))}
                             </div>
                         ) : (
@@ -206,8 +199,8 @@ const AllListings = () => {
                             <button
                                 key={i}
                                 className={`w-10 h-10 rounded-lg flex items-center justify-center font-medium transition-colors ${currentPage === i + 1
-                                        ? 'bg-blue-600 text-white shadow-md'
-                                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                                    ? 'bg-blue-600 text-white shadow-md'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
                                     }`}
                                 onClick={() => setCurrentPage(i + 1)}
                             >
